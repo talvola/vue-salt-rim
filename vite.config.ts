@@ -62,7 +62,7 @@ export default defineConfig({
         }
     }), VitePWA({
         workbox: {
-            navigateFallbackDenylist: [/^\/bar/,/^\/api\//]
+            navigateFallbackDenylist: [/^\/bar/, /^\/api\//, /^\/authorize/, /^\/auth\//, /^\/token/, /^\/register/, /^\/revoke/, /^\/mcp/, /^\/.well-known\/oauth/]
         },
         manifest: manifest,
         registerType: 'autoUpdate',
