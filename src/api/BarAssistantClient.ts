@@ -342,6 +342,67 @@ export default class BarAssistantClient {
     return (await client.GET('/bars/{id}/inventory/ingredients/{idOrSlug}/extra', { params: { path: { id: barId, idOrSlug: id } } })).data
   }
 
+  // ---- Phase B flavor matcher (Slice 1: read-only endpoints) ------------
+  // Untyped fetch wrappers — these aren't in the generated openapi schema yet.
+  // Regenerate types and migrate to client.GET() in Slice 2.
+
+  static async getFlavorCategories(): Promise<{ data: Array<{ category: string; axes: string[] }> }> {
+    return BarAssistantClient.flavorFetch('/flavor/categories')
+  }
+
+  static async getIngredientFlavorProfile(id: number): Promise<{
+    data: {
+      ingredient_id: number
+      category: string
+      profile: Record<string, number>
+      source: string | null
+      confidence: string | null
+      notes: string | null
+      scored_at: string | null
+      suggestable_for_classics: boolean
+    }
+  } | null> {
+    try {
+      return await BarAssistantClient.flavorFetch(`/ingredients/${id}/flavor-profile`)
+    } catch (e: unknown) {
+      const err = e as { response?: { status?: number } }
+      if (err?.response?.status === 404) {
+        return null
+      }
+      throw e
+    }
+  }
+
+  static async getSlotAlternatives(
+    cocktailId: number,
+    sort: number,
+    opts: { on_shelf_only?: boolean; include_strays?: boolean; top_n?: number } = {},
+  ): Promise<unknown> {
+    const qs = new URLSearchParams()
+    if (opts.on_shelf_only !== undefined) qs.set('on_shelf_only', String(opts.on_shelf_only))
+    if (opts.include_strays !== undefined) qs.set('include_strays', String(opts.include_strays))
+    if (opts.top_n !== undefined) qs.set('top_n', String(opts.top_n))
+    const suffix = qs.toString() ? `?${qs.toString()}` : ''
+    return BarAssistantClient.flavorFetch(`/cocktails/${cocktailId}/slots/${sort}/alternatives${suffix}`)
+  }
+
+  private static async flavorFetch(path: string): Promise<any> {
+    const appState = new AppState()
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      Authorization: `Bearer ${appState.token ?? ''}`,
+    }
+    if (appState.bar && appState.bar.id) {
+      headers['Bar-Assistant-Bar-Id'] = appState.bar.id.toString()
+    }
+    const res = await fetch(apiBaseUrl + path, { headers })
+    const body = await res.json().catch(() => null)
+    if (!res.ok) {
+      throw { response: { status: res.status }, body }
+    }
+    return body
+  }
+
   static async getUtensils() {
     return (await client.GET('/utensils')).data
   }

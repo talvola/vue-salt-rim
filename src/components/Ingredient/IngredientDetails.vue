@@ -105,6 +105,7 @@
                         </template>
                     </Dropdown>
                 </div>
+                <FlavorRadar v-if="ingredient.id" :ingredient-id="ingredient.id" />
                 <div class="block-container block-container--padded">
                     <h2 class="block-container__title">{{ $t('description') }}</h2>
                     <div class="item-details__chips">
@@ -228,6 +229,7 @@ import { micromark } from 'micromark'
 import PageHeader from '../PageHeader.vue'
 import BarAssistantClient from '@/api/BarAssistantClient'
 import ToggleIngredientShoppingCart from '@/components/ToggleIngredientShoppingCart.vue'
+import FlavorRadar from '@/components/Ingredient/FlavorRadar.vue'
 import ToggleIngredientBarShelf from '../ToggleIngredientBarShelf.vue'
 import Dropdown from '@/components/SaltRimDropdown.vue'
 import { useTitle } from '@/composables/title'
