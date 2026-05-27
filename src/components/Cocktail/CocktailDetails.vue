@@ -10,6 +10,7 @@ import { useConfirm } from '@/composables/confirm'
 import BarAssistantClient from '@/api/BarAssistantClient';
 import PageHeader from '@/components/PageHeader.vue'
 import SimilarCocktails from '@/components/Cocktail/SimilarCocktails.vue'
+import FlavorAlternatives from '@/components/Cocktail/FlavorAlternatives.vue'
 import IngredientSpotlight from '@/components/Ingredient/IngredientSpotlight.vue'
 import OverlayLoader from '@/components/OverlayLoader.vue'
 import { unitHandler } from '@/composables/useUnits'
@@ -594,6 +595,7 @@ fetchShoppingList()
                                 <CocktailIngredientView :cocktail-ingredient="ing" :shopping-list="userShoppingListIngredients" :scale-factor="ingredientScaleFactor" :units="currentUnit"></CocktailIngredientView>
                             </li>
                         </ul>
+                        <FlavorAlternatives v-if="cocktail.id" :cocktail-id="cocktail.id" :ingredients="cocktail.ingredients ?? []" />
                         <div v-if="cocktail.volume_ml" class="cocktail-ingredients__total-amount">
                             {{ t('cocktail.totals.amount-approx') }}: {{ totalLiquidConverted }} <span v-if="cocktail.glass && cocktail.glass.volume">({{ t('glass-type.title') }}: {{ cocktail.glass.volume }} {{ cocktail.glass.volume_units }})</span> <span v-show="(cocktail?.calories ?? 0) > 0">&middot; {{ calculatedCalories.toFixed(0) }} kcal</span> <span v-show="(cocktail?.alcohol_units ?? 0) > 0">&middot; {{ calculatedAlcUnits.toFixed(2) }} {{ t('cocktail.totals.alcohol-units') }}</span>
                         </div>

@@ -386,7 +386,41 @@ export default class BarAssistantClient {
     return BarAssistantClient.flavorFetch(`/cocktails/${cocktailId}/slots/${sort}/alternatives${suffix}`)
   }
 
-  private static async flavorFetch(path: string): Promise<any> {
+  static async putIngredientFlavorProfile(id: number, body: {
+    category: string
+    profile: Record<string, number>
+    source?: string
+    confidence?: string
+    notes?: string
+    suggestable_for_classics?: boolean
+    scored_at?: string
+  }): Promise<any> {
+    return BarAssistantClient.flavorFetch(`/ingredients/${id}/flavor-profile`, 'PUT', body)
+  }
+
+  static async putSlotMeta(cocktailId: number, sort: number, body: {
+    category: string
+    tolerance?: 'exact' | 'style' | 'any'
+    exact_ingredient_id?: number | null
+    also_accept_categories?: string[]
+    proof_min?: number | null
+    proof_max?: number | null
+  }): Promise<any> {
+    return BarAssistantClient.flavorFetch(`/cocktails/${cocktailId}/slots/${sort}/meta`, 'PUT', body)
+  }
+
+  static async putSlotConstraint(cocktailId: number, sort: number, axis: string, body:
+    | { kind: 'band'; lo: number; hi: number; out_weight?: number; hard?: boolean }
+    | { kind: 'point'; value: number; weight?: number }
+  ): Promise<any> {
+    return BarAssistantClient.flavorFetch(`/cocktails/${cocktailId}/slots/${sort}/constraints/${axis}`, 'PUT', body)
+  }
+
+  static async deleteSlotConstraint(cocktailId: number, sort: number, axis: string): Promise<any> {
+    return BarAssistantClient.flavorFetch(`/cocktails/${cocktailId}/slots/${sort}/constraints/${axis}`, 'DELETE')
+  }
+
+  private static async flavorFetch(path: string, method = 'GET', body: unknown = null): Promise<any> {
     const appState = new AppState()
     const headers: Record<string, string> = {
       Accept: 'application/json',
@@ -395,12 +429,19 @@ export default class BarAssistantClient {
     if (appState.bar && appState.bar.id) {
       headers['Bar-Assistant-Bar-Id'] = appState.bar.id.toString()
     }
-    const res = await fetch(apiBaseUrl + path, { headers })
-    const body = await res.json().catch(() => null)
-    if (!res.ok) {
-      throw { response: { status: res.status }, body }
+    if (body !== null) {
+      headers['Content-Type'] = 'application/json'
     }
-    return body
+    const res = await fetch(apiBaseUrl + path, {
+      method,
+      headers,
+      body: body !== null ? JSON.stringify(body) : undefined,
+    })
+    const respBody = await res.json().catch(() => null)
+    if (!res.ok) {
+      throw { response: { status: res.status }, body: respBody }
+    }
+    return respBody
   }
 
   static async getUtensils() {

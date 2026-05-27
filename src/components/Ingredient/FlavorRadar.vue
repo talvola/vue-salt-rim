@@ -1,15 +1,17 @@
 <template>
-    <div v-if="profile" class="block-container block-container--padded flavor-radar">
+    <div v-if="profile || loaded" class="block-container block-container--padded flavor-radar">
         <div class="flavor-radar__header">
             <h2 class="block-container__title">Flavor profile</h2>
             <div class="flavor-radar__meta">
-                <span class="flavor-radar__category">{{ profile.category }}</span>
-                <span v-if="profile.confidence" class="flavor-radar__confidence">
+                <span v-if="profile" class="flavor-radar__category">{{ profile.category }}</span>
+                <span v-if="profile?.confidence" class="flavor-radar__confidence">
                     [{{ profile.confidence }}]
                 </span>
+                <FlavorProfileEdit :ingredient-id="ingredientId" :existing-profile="profile" @saved="load" />
             </div>
         </div>
-        <svg :viewBox="`0 0 ${size} ${size}`" class="flavor-radar__svg" :style="{ maxWidth: size + 'px' }">
+        <p v-if="!profile" class="flavor-radar__empty">No flavor profile yet. Click "Add flavor profile" to score this bottle.</p>
+        <svg v-if="profile" :viewBox="`0 0 ${size} ${size}`" class="flavor-radar__svg" :style="{ maxWidth: size + 'px' }">
             <!-- Concentric rings at value=1, 2, 3 -->
             <polygon
                 v-for="ring in 3"
@@ -58,6 +60,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import BarAssistantClient from '@/api/BarAssistantClient'
+import FlavorProfileEdit from '@/components/Ingredient/FlavorProfileEdit.vue'
 
 interface FlavorProfile {
     ingredient_id: number
@@ -85,6 +88,7 @@ const maxValue = 3                     // axes are 0-3
 
 const profile = ref<FlavorProfile | null>(null)
 const categories = ref<Category[]>([])
+const loaded = ref(false)
 
 const axes = computed<string[]>(() => {
     if (!profile.value) return []
@@ -140,6 +144,8 @@ async function load() {
     } catch (e) {
         console.warn('FlavorRadar: failed to load', e)
         profile.value = null
+    } finally {
+        loaded.value = true
     }
 }
 
