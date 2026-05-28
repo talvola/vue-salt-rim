@@ -9,8 +9,8 @@
         </p>
         <div v-for="slot in slots" :key="slot.sort" class="flavor-alternatives__slot">
             <div class="flavor-alternatives__slot-header">
-                <strong>{{ slot.ingredient_name }}</strong>
-                <span class="flavor-alternatives__category">{{ slot.category }}</span>
+                <strong>{{ slot.category }} slot</strong>
+                <span class="flavor-alternatives__current">currently {{ slot.recipe_ingredient.name }}</span>
                 <span v-if="slot.also_accept_categories.length > 0" class="flavor-alternatives__also-accept">
                     + accepts {{ slot.also_accept_categories.join(', ') }}
                 </span>
@@ -41,6 +41,11 @@ interface CocktailIngredient {
     ingredient: { id: number; name: string }
 }
 
+interface RecipeIngredient {
+    id: number
+    name: string
+}
+
 interface AlternativeRow {
     bottle: { id: number; name: string; category: string; confidence: string | null }
     penalty: number
@@ -53,6 +58,7 @@ interface AlternativeRow {
 interface SlotResult {
     sort: number
     ingredient_name: string
+    recipe_ingredient: RecipeIngredient
     category: string
     also_accept_categories: string[]
     alternatives: AlternativeRow[]
@@ -87,13 +93,18 @@ async function load() {
                     ing.sort,
                     { on_shelf_only: true, include_strays: true, top_n: 5 },
                 )) as { data?: SlotResult }
-                if (resp?.data?.alternatives?.length) {
+                // Filter out the recipe's own ingredient — "alternatives" means "instead of."
+                const filtered = (resp?.data?.alternatives ?? []).filter(
+                    (a) => a.bottle.id !== ing.ingredient.id,
+                )
+                if (filtered.length) {
                     results.push({
                         sort: ing.sort,
                         ingredient_name: ing.ingredient.name,
+                        recipe_ingredient: { id: ing.ingredient.id, name: ing.ingredient.name },
                         category: (resp.data as any).category,
                         also_accept_categories: (resp.data as any).also_accept_categories ?? [],
-                        alternatives: resp.data.alternatives,
+                        alternatives: filtered,
                     })
                 }
             } catch (e: unknown) {
@@ -132,10 +143,12 @@ watch(() => [props.cocktailId, props.ingredients.map(i => i.sort).join(',')], lo
     gap: 0.5rem;
     flex-wrap: wrap;
 }
-.flavor-alternatives__category {
+.flavor-alternatives__slot-header strong {
+    text-transform: capitalize;
+}
+.flavor-alternatives__current {
     font-size: 0.85rem;
     color: var(--clr-text-secondary, #888);
-    text-transform: capitalize;
 }
 .flavor-alternatives__also-accept {
     font-size: 0.8rem;
